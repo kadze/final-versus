@@ -169,3 +169,6 @@ Before building a frontend Docker image you should make appropriate changes in `
 ```
 REACT_APP_API_URL=http://vs-backend.example.com
 ```
+## Working with AI — your memoir (deliverable)
+
+This repo includes the memoir template at [`docs/working-with-ai-template.md`](docs/working-with-ai-template.md). Copy it into your story folder as `WORKING-WITH-AI.md` and fill it in **as you work** — it is a required deliverable for your primary story, and the artifact that pays you back at interview time.
