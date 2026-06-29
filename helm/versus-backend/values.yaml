@@ -9,7 +9,6 @@ service:
   port: 8080
 
 httpRoute:
-  enabled: true
   host: ""
   paths:
     - /api
