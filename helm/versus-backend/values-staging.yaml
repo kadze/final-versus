@@ -1,0 +1,7 @@
+image:
+  repository: 381492277294.dkr.ecr.us-east-1.amazonaws.com/versus-ubuntu-backend
+
+replicaCount: 2
+
+httpRoute:
+  host: versus-staging.shevtsov.click

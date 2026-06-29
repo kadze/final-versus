@@ -1,0 +1,30 @@
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  port: 8080
+
+httpRoute:
+  enabled: true
+  host: ""
+  paths:
+    - /api
+    - /admin
+
+dbSecret:
+  name: versus-db-credentials
+
+serviceAccount:
+  name: versus
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
