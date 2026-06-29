@@ -1,23 +1,20 @@
-FROM tiangolo/meinheld-gunicorn:python3.7-alpine3.8
-ENV PYTHONUNBUFFERED 1
-RUN set -e; \
-        apk add --no-cache --virtual .build-deps \
-                gcc \
-                libc-dev \
-                linux-headers \
-                mariadb-dev \
-                python3-dev \
-                postgresql-dev \
-        ;
+FROM python:3.7-slim
 
-RUN mkdir /backend
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /backend
 
-COPY requirements.txt /backend/
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
 
-COPY . /backend/
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        default-libmysqlclient-dev \
+        gcc \
+    && pip install --no-cache-dir -r requirements.txt \
+    && apt-get purge -y --auto-remove gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . .
 
 EXPOSE 8080
-CMD ["/bin/bash"]
-ENTRYPOINT gunicorn -w 4 main.wsgi:application -b 0.0.0.0:8080
+ENTRYPOINT ["gunicorn", "-w", "4", "main.wsgi:application", "-b", "0.0.0.0:8080"]
