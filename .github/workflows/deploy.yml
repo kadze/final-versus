@@ -38,16 +38,24 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/versus-ubuntu-backend:$IMAGE_TAG backend/
-          docker push $REGISTRY/versus-ubuntu-backend:$IMAGE_TAG
+          if aws ecr describe-images --repository-name versus-ubuntu-backend --image-ids imageTag=$IMAGE_TAG --region $AWS_REGION > /dev/null 2>&1; then
+            echo "Image $IMAGE_TAG already exists in ECR, skipping build"
+          else
+            docker build -t $REGISTRY/versus-ubuntu-backend:$IMAGE_TAG backend/
+            docker push $REGISTRY/versus-ubuntu-backend:$IMAGE_TAG
+          fi
 
       - name: Build and push frontend image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/versus-ubuntu-frontend:$IMAGE_TAG frontend/
-          docker push $REGISTRY/versus-ubuntu-frontend:$IMAGE_TAG
+          if aws ecr describe-images --repository-name versus-ubuntu-frontend --image-ids imageTag=$IMAGE_TAG --region $AWS_REGION > /dev/null 2>&1; then
+            echo "Image $IMAGE_TAG already exists in ECR, skipping build"
+          else
+            docker build -t $REGISTRY/versus-ubuntu-frontend:$IMAGE_TAG frontend/
+            docker push $REGISTRY/versus-ubuntu-frontend:$IMAGE_TAG
+          fi
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name eks-kadze-${ENVIRONMENT_STAGE} --region $AWS_REGION
