@@ -1,7 +1,7 @@
 FROM node:14 as react-build
 WORKDIR /app
 COPY . ./
-RUN yarn
+RUN yarn --ignore-engines
 RUN yarn build
 
 FROM nginx:alpine
