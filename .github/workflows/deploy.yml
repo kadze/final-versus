@@ -38,7 +38,8 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          if aws ecr describe-images --repository-name versus-ubuntu-backend --image-ids imageTag=$IMAGE_TAG --region $AWS_REGION > /dev/null 2>&1; then
+          EXISTS=$(aws ecr batch-get-image --repository-name versus-ubuntu-backend --image-ids imageTag=$IMAGE_TAG --region $AWS_REGION --query 'images' --output json 2>/dev/null)
+          if [ "$EXISTS" != "[]" ] && [ -n "$EXISTS" ]; then
             echo "Image $IMAGE_TAG already exists in ECR, skipping build"
           else
             docker build -t $REGISTRY/versus-ubuntu-backend:$IMAGE_TAG backend/
@@ -50,7 +51,8 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          if aws ecr describe-images --repository-name versus-ubuntu-frontend --image-ids imageTag=$IMAGE_TAG --region $AWS_REGION > /dev/null 2>&1; then
+          EXISTS=$(aws ecr batch-get-image --repository-name versus-ubuntu-frontend --image-ids imageTag=$IMAGE_TAG --region $AWS_REGION --query 'images' --output json 2>/dev/null)
+          if [ "$EXISTS" != "[]" ] && [ -n "$EXISTS" ]; then
             echo "Image $IMAGE_TAG already exists in ECR, skipping build"
           else
             docker build -t $REGISTRY/versus-ubuntu-frontend:$IMAGE_TAG frontend/
