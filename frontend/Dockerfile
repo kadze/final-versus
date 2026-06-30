@@ -1,5 +1,6 @@
 FROM node:20-alpine as react-build
 WORKDIR /app
+RUN apk add --no-cache python3 make g++
 COPY . ./
 RUN yarn
 ENV NODE_OPTIONS=--openssl-legacy-provider
