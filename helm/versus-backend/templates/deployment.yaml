@@ -18,11 +18,22 @@ spec:
         app: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      volumes:
+        - name: db-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Release.Name }}-db
       initContainers:
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           command: ["python", "manage.py", "migrate", "--noinput"]
           workingDir: /backend
+          volumeMounts:
+            - name: db-secrets
+              mountPath: /mnt/db-secrets
+              readOnly: true
           env:
             - name: MYSQL_DATABASE
               valueFrom:
@@ -60,6 +71,10 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 8080
+          volumeMounts:
+            - name: db-secrets
+              mountPath: /mnt/db-secrets
+              readOnly: true
           env:
             - name: MYSQL_DATABASE
               valueFrom:

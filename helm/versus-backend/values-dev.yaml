@@ -5,3 +5,6 @@ replicaCount: 1
 
 httpRoute:
   host: versus-dev.shevtsov.click
+
+serviceAccount:
+  roleArn: arn:aws:iam::381492277294:role/secrets-csi-versus-irsa-eks-kadze-dev
