@@ -17,4 +17,4 @@ RUN apt-get update \
 COPY . .
 
 EXPOSE 8080
-ENTRYPOINT ["gunicorn", "-w", "4", "main.wsgi:application", "-b", "0.0.0.0:8080"]
+ENTRYPOINT ["gunicorn", "-w", "4", "main.wsgi:application", "-b", "[::]:8080"]
