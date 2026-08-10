@@ -1,21 +1,34 @@
-name: 'Deploy Versus'
+name: 'Build and Push Versus'
+
+# Renamed from "Deploy Versus" — this workflow no longer deploys anything.
+# It builds images, pushes to ECR, and commits the new tag back to the
+# values files. ArgoCD (tracking this repo from kadze-gitops) does the
+# actual deploy by reconciling that commit. No EKS/kubectl/helm access
+# needed here at all now — ECR push is the only AWS permission this
+# workflow uses.
 
 on:
   push:
     branches:
       - feature/**
       - main
+    # Without this, the tag-bump commit below would itself trigger a new
+    # run — [skip ci] in the commit message already prevents that, but
+    # excluding the values files here too means an unrelated values-dev.yaml
+    # edit (e.g. changing replicaCount) doesn't rebuild images for no reason.
+    paths-ignore:
+      - 'helm/**/values-dev.yaml'
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
 
 env:
   AWS_REGION: us-east-1
   ENVIRONMENT_STAGE: dev
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     environment: dev
 
@@ -59,30 +72,25 @@ jobs:
             docker push $REGISTRY/versus-ubuntu-frontend:$IMAGE_TAG
           fi
 
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name eks-kadze-${ENVIRONMENT_STAGE} --region $AWS_REGION
-
-      - name: Create versus namespace
-        run: kubectl create namespace versus --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Deploy versus-backend
+      - name: Bump image tag in values-dev.yaml and commit
         env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          helm upgrade --install versus-backend helm/versus-backend \
-            --namespace versus \
-            --values helm/versus-backend/values-dev.yaml \
-            --set image.tag=$IMAGE_TAG \
-            --wait
+          for f in helm/versus-backend/values-dev.yaml helm/versus-frontend/values-dev.yaml; do
+            if grep -q '^  tag:' "$f"; then
+              sed -i "s|^  tag:.*|  tag: \"$IMAGE_TAG\"|" "$f"
+            else
+              sed -i "/^  repository:/a\\  tag: \"$IMAGE_TAG\"" "$f"
+            fi
+          done
 
-      - name: Deploy versus-frontend
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          helm upgrade --install versus-frontend helm/versus-frontend \
-            --namespace versus \
-            --values helm/versus-frontend/values-dev.yaml \
-            --set image.tag=$IMAGE_TAG \
-            --wait
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add helm/versus-backend/values-dev.yaml helm/versus-frontend/values-dev.yaml
+
+          if git diff --cached --quiet; then
+            echo "Tag unchanged, nothing to commit"
+          else
+            git commit -m "chore: bump dev image tag to ${IMAGE_TAG} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
