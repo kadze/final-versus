@@ -1,5 +1,6 @@
 image:
   repository: 381492277294.dkr.ecr.us-east-1.amazonaws.com/versus-ubuntu-frontend
+  tag: "ba60dfd334d0a18dd4059775582d7078e8bf55a9"
 
 replicaCount: 1
 
